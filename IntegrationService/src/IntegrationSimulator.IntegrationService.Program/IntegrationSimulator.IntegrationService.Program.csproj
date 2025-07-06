@@ -7,4 +7,10 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\IntegrationSimulator.IntegrationService.Application\IntegrationSimulator.IntegrationService.Application.csproj" />
+    <ProjectReference Include="..\IntegrationSimulator.IntegrationService.Domain\IntegrationSimulator.IntegrationService.Domain.csproj" />
+    <ProjectReference Include="..\IntegrationSimulator.IntegrationService.Infrastructure\IntegrationSimulator.IntegrationService.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>

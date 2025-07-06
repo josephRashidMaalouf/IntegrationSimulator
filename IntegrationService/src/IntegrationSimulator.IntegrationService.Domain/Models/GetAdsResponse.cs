@@ -2,8 +2,8 @@
 
 public class GetAdsResponse
 {
-    public int NumberOfAds { get; set; }
-    public Ad[] Ads { get; set; }
+    public required int NumberOfAds { get; set; }
+    public required Ad[] Ads { get; set; }
 }
 
 public class Ad

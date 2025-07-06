@@ -2,7 +2,7 @@
 
 namespace IntegrationSimulator.IntegrationService.Domain.Interfaces;
 
-public interface IJobAdClient
+public interface IFakeERPClient
 {
-    Task<GetAdsResponse> GetNewAdListingsAsync(DateTime latestedFetchedAdsDate);
+    Task PostNewJobListingsAsync(List<PostNewJobToFakeERP> dto);
 }

@@ -1,23 +1,8 @@
-﻿using IntegrationSimulator.IntegrationService.Domain.Interfaces;
+﻿using System.Net.Http.Json;
+using IntegrationSimulator.IntegrationService.Domain.Interfaces;
 using IntegrationSimulator.IntegrationService.Domain.Models;
 
 namespace IntegrationSimulator.IntegrationService.Infrastructure.HttpClients;
-
-public class PlatsbankenClient : IJobAdClient
-{
-    private readonly HttpClient _httpClient;
-
-    public PlatsbankenClient(HttpClient httpClient)
-    {
-        _httpClient = httpClient;
-        _httpClient.BaseAddress = new Uri("https://platsbanken-api.arbetsformedlingen.se/jobs/v1/search");
-    }
-
-    public Task<GetAdsResponse?> GetNewAdListingsAsync(DateTime latestedFetchedAdsDate)
-    {
-        throw new NotImplementedException();
-    }
-}
 
 public class FakeERPClient : IFakeERPClient
 {
@@ -26,11 +11,18 @@ public class FakeERPClient : IFakeERPClient
     public FakeERPClient(HttpClient httpClient)
     {
         _httpClient = httpClient;
-        _httpClient.BaseAddress = new Uri("https://localhost:7235");
+        _httpClient.BaseAddress = new Uri("http://localhost:5000");
     }
 
-    public Task PostNewJobListingsAsync(PostNewJobToFakeERP dto)
+    public async Task PostNewJobListingsAsync(List<PostNewJobToFakeERP> dto)
     {
-        throw new NotImplementedException();
+        var result = await _httpClient.PostAsJsonAsync<List<PostNewJobToFakeERP>>("", dto);
+
+        if (!result.IsSuccessStatusCode)
+        {
+            //TODO: Log, handle, retry
+        }
+
+        //TODO: Probably return something to indicate success? Maybe not.. We will see.
     }
 }
