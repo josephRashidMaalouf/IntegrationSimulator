@@ -3,15 +3,19 @@
 using IntegrationSimulator.IntegrationService.Application.Services;
 using IntegrationSimulator.IntegrationService.Domain.Interfaces;
 using IntegrationSimulator.IntegrationService.Infrastructure.HttpClients;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
-Console.WriteLine("Hello, World!");
 
-var httpClient1  = new HttpClient();
-var httpClient2 = new HttpClient();
+var builder = Host.CreateApplicationBuilder(args);
 
-IJobAdClient jobClient = new PlatsbankenClient(httpClient1);
-IFakeERPClient erpClient = new FakeERPClient(httpClient2);
+builder.Services.AddHttpClient<IJobAdClient, PlatsbankenClient>();
+builder.Services.AddHttpClient<IFakeERPClient, FakeERPClient>();
 
-IPollingCoordinator coordinator = new PollingCoordinator(erpClient, jobClient);
+builder.Services.AddScoped<IPollingCoordinator, PollingCoordinator>();
+
+var app  = builder.Build();
+
+var coordinator = app.Services.GetRequiredService<IPollingCoordinator>();
 
 await coordinator.Execute();
