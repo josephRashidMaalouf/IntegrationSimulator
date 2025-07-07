@@ -13,7 +13,7 @@ public class PlatsbankenClient : IJobAdClient
     public PlatsbankenClient(HttpClient httpClient)
     {
         _httpClient = httpClient;
-        _httpClient.BaseAddress = new Uri("https://platsbanken-api.arbetsformedlingen.se/jobs/v1/searchs");
+        _httpClient.BaseAddress = new Uri("https://platsbanken-api.arbetsformedlingen.se/jobs/v1/search");
     }
 
     public async Task<Result> GetNewAdListingsAsync(DateTime latestFetchedAdsDate, Guid trace)

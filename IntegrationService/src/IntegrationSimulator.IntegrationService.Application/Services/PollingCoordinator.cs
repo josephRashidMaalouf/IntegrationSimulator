@@ -32,7 +32,7 @@ public class PollingCoordinator : IPollingCoordinator
 
             foreach (var error in errorResult.Errors)
             {
-                _logger.LogWarning("Trace: {trace}" + error.Message, error.Trace);
+                _logger.LogWarning("Trace: {trace}. " + error.Message, error.Trace);
 
             }
             return result;
@@ -47,14 +47,23 @@ public class PollingCoordinator : IPollingCoordinator
             var dto = ads.Ads
                 .Select(x => new PostNewJobToFakeERP(x.Id, x.Title, x.WorkplaceName, x.PublishedDate))
                 .ToList();
-            await _erpClient.PostNewJobListingsAsync(dto, trace);
+            var resultErp = await _erpClient.PostNewJobListingsAsync(dto, trace);
 
-            //TODO: make sure the ads where actually sent and received
-            _logger.LogInformation("Ads sent to fakeERP: {numOfAds}", ads.NumberOfAds);
+            if (resultErp is ErrorResult<List<PostNewJobToFakeERP>> erpErrorResult)
+            {
 
-            return;
+                foreach (var er in erpErrorResult.Errors)
+                {
+                    _logger.LogWarning("Trace: {id}. Could not send ads to fake ERP: {reason}", er.Trace, er.Message);
+                }
+
+                return erpErrorResult;
+            }
+
+
         }
-        //TODO: Log zero sent
+        _logger.LogInformation("Trace: {id}. Ads sent to fakeERP: {numOfAds}", trace, ads.NumberOfAds);
 
+        return new SuccessResult<GetAdsResponse>(ads);
     }
 }

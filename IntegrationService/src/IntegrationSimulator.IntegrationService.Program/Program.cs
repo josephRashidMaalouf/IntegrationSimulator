@@ -30,4 +30,4 @@ var app  = builder.Build();
 
 var coordinator = app.Services.GetRequiredService<IPollingCoordinator>();
 
-await coordinator.Execute();
+await coordinator.Execute(Guid.NewGuid());
