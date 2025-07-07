@@ -2,6 +2,7 @@
 using IntegrationSimulator.IntegrationService.Domain.Interfaces;
 using IntegrationSimulator.IntegrationService.Domain.Models;
 using IntegrationSimulator.IntegrationService.Domain.Models.Results;
+using Microsoft.Extensions.Configuration;
 
 namespace IntegrationSimulator.IntegrationService.Infrastructure.HttpClients;
 
@@ -9,10 +10,12 @@ public class FakeERPClient : IFakeERPClient
 {
     private readonly HttpClient _httpClient;
 
-    public FakeERPClient(HttpClient httpClient)
+    public FakeERPClient(HttpClient httpClient, IConfiguration config)
     {
         _httpClient = httpClient;
-        _httpClient.BaseAddress = new Uri("http://localhost:5000");
+        var endpoints = config.GetSection("Endpoints");
+        var uri = endpoints["FakeErpLocal"] ?? "";
+        _httpClient.BaseAddress = new Uri(uri);
     }
 
     public async Task<Result> PostNewJobListingsAsync(List<PostNewJobToFakeERP> dto, Guid trace)

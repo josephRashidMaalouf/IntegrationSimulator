@@ -3,6 +3,7 @@ using IntegrationSimulator.IntegrationService.Constants;
 using IntegrationSimulator.IntegrationService.Domain.Interfaces;
 using IntegrationSimulator.IntegrationService.Domain.Models;
 using IntegrationSimulator.IntegrationService.Domain.Models.Results;
+using Microsoft.Extensions.Configuration;
 
 namespace IntegrationSimulator.IntegrationService.Infrastructure.HttpClients;
 
@@ -10,10 +11,13 @@ public class PlatsbankenClient : IJobAdClient
 {
     private readonly HttpClient _httpClient;
 
-    public PlatsbankenClient(HttpClient httpClient)
+    public PlatsbankenClient(HttpClient httpClient, IConfiguration config)
     {
         _httpClient = httpClient;
-        _httpClient.BaseAddress = new Uri("https://platsbanken-api.arbetsformedlingen.se/jobs/v1/search");
+        var endpoints = config.GetSection("Endpoints");
+        var uri = endpoints["Platsbanken"] ?? "";
+        _httpClient.BaseAddress = new Uri(uri);
+        _httpClient.BaseAddress = new Uri(uri);
     }
 
     public async Task<Result> GetNewAdListingsAsync(DateTime latestFetchedAdsDate, Guid trace)
