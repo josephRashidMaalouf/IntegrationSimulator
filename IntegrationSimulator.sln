@@ -12,6 +12,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "IntegrationService", "IntegrationService", "{A0A12C3A-55A9-4D2F-AB26-082A6A9BF31D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{86F1A43E-F216-45F3-89D0-59562A3CB15B}"
+	ProjectSection(SolutionItems) = preProject
+		IntegrationService\src\Dockerfile = IntegrationService\src\Dockerfile
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IntegrationSimulator.IntegrationService.Domain", "IntegrationService\src\IntegrationSimulator.IntegrationService.Domain\IntegrationSimulator.IntegrationService.Domain.csproj", "{6926D99B-EE58-4E9F-B0B1-FDB17A052124}"
 EndProject
