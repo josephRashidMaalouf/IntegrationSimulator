@@ -1,0 +1,38 @@
+name: Dockerize and push Integration-Service
+
+on:
+  push:
+    branches: 
+      - "main"
+    paths:
+      - "IntegrationService/src/**"  
+  pull_request:
+    branches: 
+      - "main"
+    paths:
+      - "IntegrationService/src/**"  
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Check out the repository
+    - uses: actions/checkout@v4
+    
+    # Log in to Docker Hub
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+   # Build the Docker image
+    - name: Build the Docker image
+      run: |
+        docker build ./* --file ./Dockerfile --tag josephrashidmaalouf/integration-service:${{ github.run_id }} --tag josephrashidmaalouf/integration-service:latest
+
+    # Push both the latest and run-id tagged images
+    - name: Push Docker images
+      run: |
+        docker push josephrashidmaalouf/integration-service:latest
+        docker push josephrashidmaalouf/integration-service:${{ github.run_id }}
