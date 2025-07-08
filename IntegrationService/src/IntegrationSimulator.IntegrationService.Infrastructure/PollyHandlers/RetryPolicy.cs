@@ -5,7 +5,7 @@ namespace IntegrationSimulator.IntegrationService.Infrastructure.PollyHandlers;
 
 public  class RetryPolicy
 {
-    static IAsyncPolicy<HttpResponseMessage> Get()
+    public static IAsyncPolicy<HttpResponseMessage> Get()
     {
         return HttpPolicyExtensions
             .HandleTransientHttpError()

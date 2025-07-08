@@ -1,15 +1,26 @@
 using IntegrationSimulator.FakeERP;
-using Microsoft.AspNetCore.Http.HttpResults;
 
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
 
-app.MapPost("/", (List<JobPostedRequestDto> dto) =>
+app.MapPost("/", async (List<JobPostedRequestDto> dto) =>
 {
-    foreach (var job in dto)
+    //Simulate ERP down
+    var random = new Random();
+    var rNum = random.Next(11);
+    if (rNum > 5)
     {
-        Console.WriteLine($"Pretending to do stuff with this data for ad: {job.Id}");
+        return Results.StatusCode(503);
     }
+
+
+    Console.WriteLine($"Received: {dto.Count} number of listings");
+
+    var path = Path.Combine(Environment.CurrentDirectory, "jobads.csv");
+
+    await File.AppendAllLinesAsync(path, dto.Select(x => x.ToString()));
+
+
     return Results.Ok();
 });
 

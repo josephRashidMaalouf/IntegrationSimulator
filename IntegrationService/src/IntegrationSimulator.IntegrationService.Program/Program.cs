@@ -3,19 +3,28 @@
 using IntegrationSimulator.IntegrationService.Application.Services;
 using IntegrationSimulator.IntegrationService.Domain.Interfaces;
 using IntegrationSimulator.IntegrationService.Infrastructure.HttpClients;
+using IntegrationSimulator.IntegrationService.Infrastructure.Persistence;
+using IntegrationSimulator.IntegrationService.Infrastructure.Persistence.Repositories;
+using IntegrationSimulator.IntegrationService.Infrastructure.PollyHandlers;
+using IntegrationSimulator.IntegrationService.Program.HostedServices;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
-using static System.Net.Mime.MediaTypeNames;
 
 
 var builder = Host.CreateApplicationBuilder(args);
 
-builder.Services.AddHttpClient<IJobAdClient, PlatsbankenClient>();
-builder.Services.AddHttpClient<IFakeERPClient, FakeERPClient>();
+builder.Services.AddHttpClient<IJobAdClient, PlatsbankenClient>()
+    .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+    .AddPolicyHandler(RetryPolicy.Get());
 
-var test = builder.Configuration["Test"];
-Console.WriteLine($"Teest: {test}");
+
+builder.Services.AddHttpClient<IFakeERPClient, FakeERPClient>()
+    .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+    .AddPolicyHandler(RetryPolicy.Get());
+
+builder.Services.AddDbContext<JobAdsMetaDataContext>();
+
 
 builder.Services.AddSerilog(config =>
 {
@@ -26,11 +35,12 @@ builder.Services.AddSerilog(config =>
 });
 
 
-
+builder.Services.AddScoped<IMetaDataRepository, MetaDataRepository>();
 builder.Services.AddScoped<IPollingCoordinator, PollingCoordinator>();
+
+builder.Services.AddHostedService<PollingService>();
 
 var app  = builder.Build();
 
-var coordinator = app.Services.GetRequiredService<IPollingCoordinator>();
+await app.RunAsync();
 
-await coordinator.Execute(Guid.NewGuid());

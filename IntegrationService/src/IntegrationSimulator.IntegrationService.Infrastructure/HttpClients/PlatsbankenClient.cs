@@ -1,4 +1,5 @@
 ﻿using System.Net.Http.Json;
+using System.Text.Json;
 using IntegrationSimulator.IntegrationService.Constants;
 using IntegrationSimulator.IntegrationService.Domain.Interfaces;
 using IntegrationSimulator.IntegrationService.Domain.Models;
@@ -37,8 +38,10 @@ public class PlatsbankenClient : IJobAdClient
                     Value = PlatsbankenFilterQueryConstants.ValueGothenburg
                 }
             ],
-            FromDate = latestFetchedAdsDate.AddSeconds(1)
+            FromDate = latestFetchedAdsDate.AddSeconds(30)
         };
+
+        var x = JsonSerializer.Serialize(dto, new JsonSerializerOptions() { WriteIndented = true });
 
         var result = await _httpClient.PostAsJsonAsync<GetAdsRequest>("", dto);
         
@@ -47,7 +50,7 @@ public class PlatsbankenClient : IJobAdClient
             return new ErrorResult<GetAdsRequest>(dto, new Error()
             {
                 Trace = trace,
-                Message = $"Could not reach platsbanken api on: {_httpClient.BaseAddress?.AbsoluteUri ?? "[no uri]"}"
+                Message = $"Could not reach platsbanken api on: {_httpClient.BaseAddress?.AbsoluteUri ?? "[no uri]"}. Code: {result.StatusCode}"
             });
         }
 

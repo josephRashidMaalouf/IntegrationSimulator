@@ -7,12 +7,22 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.6">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="9.0.6" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\IntegrationSimulator.IntegrationService.Application\IntegrationSimulator.IntegrationService.Application.csproj" />
     <ProjectReference Include="..\IntegrationSimulator.IntegrationService.Domain\IntegrationSimulator.IntegrationService.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Persistence\Entities\" />
+    <Folder Include="Persistence\Repositories\" />
   </ItemGroup>
 
 </Project>

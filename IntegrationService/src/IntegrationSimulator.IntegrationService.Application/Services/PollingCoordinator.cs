@@ -9,20 +9,20 @@ public class PollingCoordinator : IPollingCoordinator
 {
     private readonly IFakeERPClient _erpClient;
     private readonly IJobAdClient _jobAdClient;
+    private readonly IMetaDataRepository _metaDataRepository;
     private readonly ILogger<PollingCoordinator> _logger;
-    //TODO: Add some kind of dataaccess to fetch meta data about past polling attempt to determine latest successfull poll date
 
-    public PollingCoordinator(IFakeERPClient erpClient, IJobAdClient jobAdClient, ILogger<PollingCoordinator> logger)
+    public PollingCoordinator(IFakeERPClient erpClient, IJobAdClient jobAdClient, ILogger<PollingCoordinator> logger, IMetaDataRepository metaDataRepository)
     {
         _erpClient = erpClient;
         _jobAdClient = jobAdClient;
         _logger = logger;
+        _metaDataRepository = metaDataRepository;
     }
 
     public async Task<Result> Execute(Guid trace)
     {
-        //TODO: replace this variable with the actual date from the meta data store
-        DateTime latestSuccessfullFetch = DateTime.UtcNow.AddDays(-10);
+        DateTime latestSuccessfullFetch = await _metaDataRepository.GetLatestSuccessfulFetchDate();
 
         var result = await _jobAdClient.GetNewAdListingsAsync(latestSuccessfullFetch, trace);
 
@@ -60,10 +60,15 @@ public class PollingCoordinator : IPollingCoordinator
                 return erpErrorResult;
             }
 
+            var mostRecentAdDate = ads.Ads
+                .OrderByDescending(x => x.PublishedDate)
+                .First()
+                .PublishedDate;
 
+            await _metaDataRepository.SaveMostRecentSavedAdDateAsync(trace, mostRecentAdDate);
         }
         _logger.LogInformation("Trace: {id}. Ads sent to fakeERP: {numOfAds}", trace, ads.NumberOfAds);
-
+        
         return new SuccessResult<GetAdsResponse>(ads);
     }
 }
