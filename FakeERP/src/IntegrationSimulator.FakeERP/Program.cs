@@ -13,7 +13,6 @@ app.MapPost("/", async (List<JobPostedRequestDto> dto) =>
         return Results.StatusCode(503);
     }
 
-
     Console.WriteLine($"Received: {dto.Count} number of listings");
 
     var path = Path.Combine(Environment.CurrentDirectory, "jobads.csv");
