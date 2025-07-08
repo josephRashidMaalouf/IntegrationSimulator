@@ -5,6 +5,7 @@ using IntegrationSimulator.IntegrationService.Infrastructure.Persistence;
 using IntegrationSimulator.IntegrationService.Infrastructure.Persistence.Repositories;
 using IntegrationSimulator.IntegrationService.Infrastructure.PollyHandlers;
 using IntegrationSimulator.IntegrationService.Program.HostedServices;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -39,4 +40,21 @@ builder.Services.AddHostedService<PollingService>();
 
 var app  = builder.Build();
 
+await ApplyMigrations();
+
+//Make sure the database have been set up before continuing
+Thread.Sleep(10000);
+
 await app.RunAsync();
+
+
+async Task ApplyMigrations()
+{
+    using var scope = app.Services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<JobAdsMetaDataContext>();
+
+    if ((await dbContext.Database.GetPendingMigrationsAsync()).Any())
+    {
+        await dbContext.Database.MigrateAsync();
+    }
+}

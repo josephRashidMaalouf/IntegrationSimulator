@@ -1,0 +1,22 @@
+services:
+  integration-service:
+    image: josephrashidmaalouf/integration-service:latest
+    container_name: integration-service
+    volumes:
+      - integration_data:/app/Data    
+      - integration_logs:/app/Logs     
+    pull_policy: always
+
+  fake-erp:
+    image: josephrashidmaalouf/fake-erp:latest
+    container_name: fake-erp
+    ports:
+      - "5000:5000"
+    volumes:
+      - fake_erp_data:/app           
+    pull_policy: always
+
+volumes:
+  integration_data:
+  integration_logs:
+  fake_erp_data:

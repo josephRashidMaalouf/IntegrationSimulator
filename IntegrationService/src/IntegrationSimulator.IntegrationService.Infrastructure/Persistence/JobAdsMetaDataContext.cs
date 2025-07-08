@@ -10,16 +10,14 @@ public class JobAdsMetaDataContext : DbContext
     private readonly string _path;
     public JobAdsMetaDataContext()
     {
-        var folder = Environment.SpecialFolder.LocalApplicationData;
-        var spec = Environment.GetFolderPath(folder);
-        var path = Path.Combine(spec, "JobAdsMetadataDb");
+        var path = Path.Combine(AppContext.BaseDirectory, "Db");
 
         if (!Directory.Exists(path))
         {
             Directory.CreateDirectory(path);
         }
 
-        _path = Path.Join(path, "integrationSimulationJobAdsMetaData.db");
+        _path = Path.Combine(path, "integrationSimulationJobAdsMetaData.db");
     }
     protected override void OnConfiguring(DbContextOptionsBuilder options)
         => options.UseSqlite($"Data Source={_path}");
