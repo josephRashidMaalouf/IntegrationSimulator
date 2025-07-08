@@ -5,6 +5,8 @@ services:
     volumes:
       - integration_data:/app/Data    
       - integration_logs:/app/Logs     
+    environment:
+      - DOTNET_ENVIRONMENT=docker
     pull_policy: always
 
   fake-erp:

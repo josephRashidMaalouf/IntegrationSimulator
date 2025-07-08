@@ -15,7 +15,7 @@ public class FakeERPClient : IFakeERPClient
         _httpClient = httpClient;
         var endpoints = config.GetSection("Endpoints");
 
-        var env = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMNET") ?? "";
+        var env = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "";
         
         var uri = endpoints["FakeErpLocal"] ?? "";
 
