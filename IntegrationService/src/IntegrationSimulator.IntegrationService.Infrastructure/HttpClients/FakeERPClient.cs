@@ -16,6 +16,7 @@ public class FakeERPClient : IFakeERPClient
         var endpoints = config.GetSection("Endpoints");
 
         var env = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "";
+        Console.WriteLine(env);
         
         var uri = endpoints["FakeErpLocal"] ?? "";
 
@@ -23,6 +24,8 @@ public class FakeERPClient : IFakeERPClient
         {
             uri = endpoints["FakeErpDocker"] ?? "";
         }
+
+        Console.WriteLine(uri);
         _httpClient.BaseAddress = new Uri(uri);
     }
 
