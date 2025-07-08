@@ -1,6 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
-
-using IntegrationSimulator.IntegrationService.Application.Services;
+﻿using IntegrationSimulator.IntegrationService.Application.Services;
 using IntegrationSimulator.IntegrationService.Domain.Interfaces;
 using IntegrationSimulator.IntegrationService.Infrastructure.HttpClients;
 using IntegrationSimulator.IntegrationService.Infrastructure.Persistence;
