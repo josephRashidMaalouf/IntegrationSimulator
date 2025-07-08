@@ -5,12 +5,12 @@ on:
     branches: 
       - "main"
     paths:
-      - "IntegrationService/**"  
+      - "IntegrationService/src**"  
   pull_request:
     branches: 
       - "main"
     paths:
-      - "IntegrationService/**"  
+      - "IntegrationService/src**"  
 jobs:
   build:
     runs-on: ubuntu-latest
