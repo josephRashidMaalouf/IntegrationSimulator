@@ -2,13 +2,12 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-# Copy the project file and restore dependencies
-COPY ./IntegrationSimulator.IntegrationService.Program/IntegrationSimulator.IntegrationService.Program.csproj ./IntegrationSimulator.IntegrationService.Program/
-RUN dotnet restore ./IntegrationSimulator.IntegrationService.Program/IntegrationSimulator.IntegrationService.Program.csproj
+# Copy all source code 
+COPY . .
 
-# Copy everything else and build
-COPY ./IntegrationSimulator.IntegrationService.Program/. ./IntegrationSimulator.IntegrationService.Program/
+# Restore and publish the main project
 WORKDIR /src/IntegrationSimulator.IntegrationService.Program
+RUN dotnet restore
 RUN dotnet publish -c Release -o /app/publish
 
 # Runtime stage
@@ -16,5 +15,4 @@ FROM mcr.microsoft.com/dotnet/runtime:9.0-alpine
 WORKDIR /app
 COPY --from=build /app/publish .
 
-# Define entrypoint
 ENTRYPOINT ["dotnet", "IntegrationSimulator.IntegrationService.Program.dll"]
