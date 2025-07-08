@@ -31,12 +31,12 @@ jobs:
       working-directory: FakeERP/src/IntegrationSimulator.FakeERP
       run: |
         docker build . \
-        --tag josephrashidmaalouf/fakeERP:${{ github.run_id }} \
-        --tag josephrashidmaalouf/fakeERP:latest
+        --tag josephrashidmaalouf/fake-erp:${{ github.run_id }} \
+        --tag josephrashidmaalouf/fake-erp:latest
 
 
     # Push both the latest and run-id tagged images
     - name: Push Docker images
       run: |
-        docker push josephrashidmaalouf/fakeERP:latest
-        docker push josephrashidmaalouf/fakeERP:${{ github.run_id }}
+        docker push josephrashidmaalouf/fake-erp:latest
+        docker push josephrashidmaalouf/fake-erp:${{ github.run_id }}
