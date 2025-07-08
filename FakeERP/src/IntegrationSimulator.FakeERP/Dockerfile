@@ -15,8 +15,8 @@ WORKDIR /App
 # Copy the published output to the runtime image
 COPY --from=build-env /App/out ./
 
-# Set environment to development
-ENV ASPNETCORE_ENVIRONMENT=development
+# Set environment to live
+ENV ASPNETCORE_ENVIRONMENT=docker
 
 # Expose the required port
 EXPOSE 5000

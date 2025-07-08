@@ -10,6 +10,9 @@ WORKDIR /src/IntegrationSimulator.IntegrationService.Program
 RUN dotnet restore
 RUN dotnet publish -c Release -o /app/publish
 
+# Set environment to live
+ENV DOTNET_ENVIRONMENT=docker
+
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/runtime:9.0-alpine
 WORKDIR /app
