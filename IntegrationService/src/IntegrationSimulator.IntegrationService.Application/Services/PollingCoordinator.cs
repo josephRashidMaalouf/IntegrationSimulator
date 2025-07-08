@@ -4,7 +4,6 @@ using IntegrationSimulator.IntegrationService.Domain.Models.Results;
 using Microsoft.Extensions.Logging;
 
 namespace IntegrationSimulator.IntegrationService.Application.Services;
-
 public class PollingCoordinator : IPollingCoordinator
 {
     private readonly IFakeERPClient _erpClient;
