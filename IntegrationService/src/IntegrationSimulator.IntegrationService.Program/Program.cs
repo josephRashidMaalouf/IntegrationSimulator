@@ -9,7 +9,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
-
 var builder = Host.CreateApplicationBuilder(args);
 
 builder.Services.AddHttpClient<IJobAdClient, PlatsbankenClient>()
