@@ -28,7 +28,7 @@ jobs:
 
    # Build the Docker image
     - name: Build the Docker image
-      working-directory: IntegrationService/src/IntegrationSimulator.FakeERP
+      working-directory: FakeERP/src/IntegrationSimulator.FakeERP
       run: |
         docker build . \
         --tag josephrashidmaalouf/fakeERP:${{ github.run_id }} \
