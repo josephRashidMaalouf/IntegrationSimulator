@@ -3,12 +3,12 @@ name: Dockerize and push Integration-Service
 on:
   push:
     branches: 
-      - "main"
+      - "master"
     paths:
       - "IntegrationService/src/**"  
   pull_request:
     branches: 
-      - "main"
+      - "master"
     paths:
       - "IntegrationService/src/**"  
 jobs:
