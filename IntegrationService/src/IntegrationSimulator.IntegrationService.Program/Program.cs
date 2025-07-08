@@ -41,4 +41,3 @@ builder.Services.AddHostedService<PollingService>();
 var app  = builder.Build();
 
 await app.RunAsync();
-
