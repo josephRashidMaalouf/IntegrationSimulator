@@ -37,11 +37,10 @@ public class PlatsbankenClient : IJobAdClient
                     Type = PlatsbankenFilterQueryConstants.TypeMunicipality,
                     Value = PlatsbankenFilterQueryConstants.ValueGothenburg
                 }
-            ],
-            FromDate = latestFetchedAdsDate.AddSeconds(30)
+            ], 
+        //This may cause this application to miss new ads published seconds after the latest successful poll. But for the purposes of this demo app it is fine
+        FromDate = latestFetchedAdsDate.AddMinutes(1)
         };
-
-        var x = JsonSerializer.Serialize(dto, new JsonSerializerOptions() { WriteIndented = true });
 
         var result = await _httpClient.PostAsJsonAsync<GetAdsRequest>("", dto);
         
