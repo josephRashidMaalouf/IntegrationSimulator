@@ -28,8 +28,12 @@ jobs:
 
    # Build the Docker image
     - name: Build the Docker image
+      working-directory: IntegrationService/src
       run: |
-        docker build ./IntegrationService/src --file ./Dockerfile --tag josephrashidmaalouf/integration-service:${{ github.run_id }} --tag josephrashidmaalouf/integration-service:latest
+        docker build . \
+        --tag josephrashidmaalouf/integration-service:${{ github.run_id }} \
+        --tag josephrashidmaalouf/integration-service:latest
+
 
     # Push both the latest and run-id tagged images
     - name: Push Docker images
