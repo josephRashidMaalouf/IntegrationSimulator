@@ -20,6 +20,7 @@ public class PollingService : BackgroundService
             await _coordinator.Execute(trace);
 
             await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
+
         }
     }
 }
