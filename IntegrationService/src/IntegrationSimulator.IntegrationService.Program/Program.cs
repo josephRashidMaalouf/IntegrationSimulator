@@ -37,6 +37,9 @@ builder.Services.AddSerilog(config =>
 
 builder.Services.AddScoped<IMetaDataRepository, MetaDataRepository>();
 builder.Services.AddScoped<IPollingCoordinator, PollingCoordinator>();
+builder.Services.AddScoped<IProducer, Producer>();
+
+
 builder.Services.AddSingleton<IConnectionFactory, ConnectionFactory>(_ => new()
 {
     Uri = new Uri(builder.Configuration["RabbitMQ:MqUri"] ?? string.Empty),
