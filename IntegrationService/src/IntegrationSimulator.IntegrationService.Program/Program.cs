@@ -42,7 +42,7 @@ builder.Services.AddScoped<Consumer>();
 
 builder.Services.AddSingleton<IConnectionFactory, ConnectionFactory>(_ => new()
 {
-    Uri = new Uri(builder.Configuration["RabbitMQ:Uri"] ?? string.Empty),
+    Uri = new Uri(builder.Configuration["RabbitMQ:Uri"] ?? "amqp://guest:guest@rabbitmq:5672"),
     ClientProvidedName = builder.Configuration["RabbitMQ:ClientProvidedName"] ?? string.Empty,
     HostName = builder.Configuration["RabbitMQ:HostName"] ?? string.Empty,
     UserName = builder.Configuration["RabbitMQ:Username"] ?? string.Empty,
