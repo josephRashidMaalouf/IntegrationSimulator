@@ -38,7 +38,7 @@ builder.Services.AddSerilog(config =>
 builder.Services.AddScoped<IMetaDataRepository, MetaDataRepository>();
 builder.Services.AddScoped<IPollingCoordinator, PollingCoordinator>();
 builder.Services.AddScoped<IProducer, Producer>();
-
+builder.Services.AddScoped<Consumer>();
 
 builder.Services.AddSingleton<IConnectionFactory, ConnectionFactory>(_ => new()
 {
