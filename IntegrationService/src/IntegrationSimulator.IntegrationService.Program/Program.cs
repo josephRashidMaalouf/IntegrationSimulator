@@ -1,6 +1,7 @@
 ﻿using IntegrationSimulator.IntegrationService.Application.Services;
 using IntegrationSimulator.IntegrationService.Domain.Interfaces;
 using IntegrationSimulator.IntegrationService.Infrastructure.HttpClients;
+using IntegrationSimulator.IntegrationService.Infrastructure.MessageQueueing;
 using IntegrationSimulator.IntegrationService.Infrastructure.Persistence;
 using IntegrationSimulator.IntegrationService.Infrastructure.Persistence.Repositories;
 using IntegrationSimulator.IntegrationService.Infrastructure.PollyHandlers;
@@ -8,6 +9,7 @@ using IntegrationSimulator.IntegrationService.Program.HostedServices;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using RabbitMQ.Client;
 using Serilog;
 
 var builder = Host.CreateApplicationBuilder(args);
@@ -35,8 +37,17 @@ builder.Services.AddSerilog(config =>
 
 builder.Services.AddScoped<IMetaDataRepository, MetaDataRepository>();
 builder.Services.AddScoped<IPollingCoordinator, PollingCoordinator>();
+builder.Services.AddSingleton<IConnectionFactory, ConnectionFactory>(_ => new()
+{
+    Uri = new Uri(builder.Configuration["RabbitMQ:MqUri"] ?? string.Empty),
+    ClientProvidedName = builder.Configuration["RabbitMQ:ClientProvidedName"] ?? string.Empty,
+    HostName = builder.Configuration["RabbitMQ:HostName"] ?? string.Empty,
+    UserName = builder.Configuration["RabbitMQ:Username"] ?? string.Empty,
+    Password = builder.Configuration["RabbitMQ:Password"] ?? string.Empty
+});
 
 builder.Services.AddHostedService<PollingService>();
+builder.Services.AddHostedService<DeQueueingService>();
 
 var app  = builder.Build();
 

@@ -10,16 +10,18 @@ public class PollingCoordinator : IPollingCoordinator
     private readonly IJobAdClient _jobAdClient;
     private readonly IMetaDataRepository _metaDataRepository;
     private readonly ILogger<PollingCoordinator> _logger;
+    private readonly IProducer _producer;
 
-    public PollingCoordinator(IFakeERPClient erpClient, IJobAdClient jobAdClient, ILogger<PollingCoordinator> logger, IMetaDataRepository metaDataRepository)
+    public PollingCoordinator(IFakeERPClient erpClient, IJobAdClient jobAdClient, ILogger<PollingCoordinator> logger, IMetaDataRepository metaDataRepository, IProducer producer)
     {
         _erpClient = erpClient;
         _jobAdClient = jobAdClient;
         _logger = logger;
         _metaDataRepository = metaDataRepository;
+        _producer = producer;
     }
 
-    public async Task<Result> Execute(Guid trace)
+    public async Task Execute(Guid trace)
     {
         DateTime latestSuccessfullFetch = await _metaDataRepository.GetLatestSuccessfulFetchDate();
 
@@ -34,40 +36,22 @@ public class PollingCoordinator : IPollingCoordinator
                 _logger.LogWarning("Trace: {trace}. " + error.Message, error.Trace);
 
             }
-            return result;
+            return;
         }
 
         var ads = successResult.Data;
 
-        _logger.LogInformation("Trace: {id}. New job ads listed: {numOfAds}", trace, ads.NumberOfAds);
 
-        if (ads.NumberOfAds != 0)
-        {
-            var dto = ads.Ads
-                .Select(x => new PostNewJobToFakeERP(x.Id, x.Title, x.WorkplaceName, x.PublishedDate))
-                .ToList();
-            var resultErp = await _erpClient.PostNewJobListingsAsync(dto, trace);
-
-            if (resultErp is ErrorResult<List<PostNewJobToFakeERP>> erpErrorResult)
-            {
-
-                foreach (var er in erpErrorResult.Errors)
-                {
-                    _logger.LogWarning("Trace: {id}. Could not send ads to fake ERP: {reason}", er.Trace, er.Message);
-                }
-
-                return erpErrorResult;
-            }
-
-            var mostRecentAdDate = ads.Ads
-                .OrderByDescending(x => x.PublishedDate)
-                .First()
-                .PublishedDate;
-
-            await _metaDataRepository.SaveMostRecentSavedAdDateAsync(trace, mostRecentAdDate);
-        }
-        _logger.LogInformation("Trace: {id}. Ads sent to fakeERP: {numOfAds}", trace, ads.NumberOfAds);
+        await _producer.PublishToQueueAsync(new QueueAdsDto(ads, trace));
         
-        return new SuccessResult<GetAdsResponse>(ads);
+        _logger.LogInformation("Trace: {id}. New job ads listed: {numOfAds}. Sent to queue.", trace, ads.NumberOfAds);
+
+        var mostRecentAdDate = ads.Ads
+            .OrderByDescending(x => x.PublishedDate)
+            .First()
+            .PublishedDate;
+
+        await _metaDataRepository.SaveMostRecentSavedAdDateAsync(trace, mostRecentAdDate);
+
     }
 }
