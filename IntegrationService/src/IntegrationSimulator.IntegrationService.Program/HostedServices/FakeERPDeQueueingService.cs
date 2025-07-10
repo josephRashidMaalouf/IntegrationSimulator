@@ -19,6 +19,8 @@ public class FakeERPDeQueueingService : BackgroundService
     private readonly ILogger<FakeERPDeQueueingService> _logger;
     private readonly IRabbitMQConfiguration _config;
     private readonly IConnectionFactory _factory;
+    private IConnection? _connection;
+    private IChannel? _channel;
 
     public FakeERPDeQueueingService(IFakeERPClient erpClient, ILogger<FakeERPDeQueueingService> logger, IRabbitMQConfiguration config, IConnectionFactory factory)
     {
@@ -39,35 +41,35 @@ public class FakeERPDeQueueingService : BackgroundService
 
                 ulong deliveryTag = 0;
 
-                await using var connection = await _factory.CreateConnectionAsync(cancellationToken);
-                await using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
+                _connection = await _factory.CreateConnectionAsync(cancellationToken);
+                _channel = await _connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
-                await channel.QueueDeclareAsync(
+                await _channel.QueueDeclareAsync(
                     queue: nameof(FakeERPDeQueueingService),
                     durable: true,
                     exclusive: false,
                     autoDelete: false,
                     cancellationToken: cancellationToken);
 
-                await channel.ExchangeDeclareAsync(
+                await _channel.ExchangeDeclareAsync(
                     exchange: _config.ExchangeName,
                     type: ExchangeType.Fanout,
                     durable: true,
                     autoDelete: false,
                     cancellationToken: cancellationToken);
 
-                await channel.QueueBindAsync(
+                await _channel.QueueBindAsync(
                     queue: nameof(FakeERPDeQueueingService),
                     exchange: _config.ExchangeName,
                     routingKey: "",
                     cancellationToken: cancellationToken);
 
-                var consumer = new AsyncEventingBasicConsumer(channel);
+                var consumer = new AsyncEventingBasicConsumer(_channel);
 
                 consumer.ReceivedAsync += OnReceivedAsync;
 
 
-                await channel.BasicConsumeAsync(
+                await _channel.BasicConsumeAsync(
                     queue: nameof(FakeERPDeQueueingService),
                     autoAck: false,
                     consumer: consumer);
@@ -109,20 +111,23 @@ public class FakeERPDeQueueingService : BackgroundService
 
         _logger.LogInformation("Trace: {id}. AdsData sent to fakeERP: {numOfAds}", ads.Trace, ads.AdsData.NumberOfAds);
 
-        //await ((AsyncEventingBasicConsumer)obj).Channel.BasicAckAsync(
-        //    deliveryTag: deliveryTag,
-        //    multiple: false);
+        await ((AsyncEventingBasicConsumer)obj).Channel.BasicAckAsync(
+            deliveryTag: deliveryTag,
+            multiple: false);
     }
 
-    public override Task StopAsync(CancellationToken cancellationToken)
+    public override async Task StopAsync(CancellationToken cancellationToken)
     {
-        Console.WriteLine("Stopping FakeERPQueueingService with stopAsync");
-        return base.StopAsync(cancellationToken);
-    }
+        if (_channel is not null)
+        {
+            await _channel.CloseAsync(cancellationToken);
+        }
 
-    public override void Dispose()
-    {
-        Console.WriteLine("Disposing....");
-        base.Dispose();
+        if (_connection is not null)
+        {
+            await _connection.CloseAsync(cancellationToken);
+        }
+
+        await base.StopAsync(cancellationToken);
     }
 }

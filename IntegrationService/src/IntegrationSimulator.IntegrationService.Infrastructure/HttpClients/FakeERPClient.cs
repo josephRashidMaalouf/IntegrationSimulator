@@ -24,7 +24,6 @@ public class FakeERPClient : IFakeERPClient
             uri = endpoints["FakeErpDocker"] ?? "";
         }
 
-        Console.WriteLine(uri);
         _httpClient.BaseAddress = new Uri(uri);
     }
 
