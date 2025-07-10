@@ -14,53 +14,27 @@ namespace IntegrationSimulator.IntegrationService.Infrastructure.MessageQueueing
 
 public class Consumer
 {
-    private readonly IConnectionFactory _connectionFactory;
     private readonly IFakeERPClient _erpClient;
     private readonly ILogger<Consumer> _logger;
-    private readonly string _hostName;
-    private readonly string _queueName;
+    private readonly IRabbitMQConfiguration _config;
+    private readonly RabbitMQService _mqService;
 
-    public Consumer(IConnectionFactory connectionFactory, IConfiguration config, IFakeERPClient erpClient, ILogger<Consumer> logger)
+    public Consumer(RabbitMQService rabbitMqService, IRabbitMQConfiguration config, IFakeERPClient erpClient, ILogger<Consumer> logger, RabbitMQService mqService)
     {
-        _connectionFactory = connectionFactory;
+        _config = config;
         _erpClient = erpClient;
         _logger = logger;
-
-        var env = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "";
-
-        var rabbitMQConfig = config.GetSection("RabbitMQ");
-
-        _queueName = rabbitMQConfig["QueueName"] ?? "";
-        _hostName = rabbitMQConfig["HostNameLocal"] ?? "";
-        if (env == "docker")
-        {
-            _hostName = rabbitMQConfig["HostNameDocker"] ?? "";
-        }
+        _mqService = mqService;
     }
 
     public async Task OpenQueueAsync(CancellationToken cancellationToken)
     {
-        var factory = new ConnectionFactory()
-        {
-            HostName = _hostName
-        };
-
-        await using var connection = await factory.CreateConnectionAsync(cancellationToken);
-        await using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
-
         bool erpSuccess = false;
         ulong deliveryTag = 0;
 
-        await channel.QueueDeclareAsync(
-            queue: _queueName,
-            durable: false,
-            exclusive: false,
-            autoDelete: false,
-            arguments: null, 
-            cancellationToken: cancellationToken);
+        var channelConnection = await _mqService.DeclareDurableQueueAsync();
 
-        var consumer = new AsyncEventingBasicConsumer(channel);
-
+        var consumer = new AsyncEventingBasicConsumer(channelConnection.channel);
         consumer.ReceivedAsync += async (model, eventArgs) =>
         {
             var body = eventArgs.Body.ToArray();
@@ -96,14 +70,14 @@ public class Consumer
 
         if (!erpSuccess)
         {
-            await channel.BasicRejectAsync(
+            await channelConnection.channel.BasicRejectAsync(
                 deliveryTag: deliveryTag,
                 requeue: false,
                 cancellationToken: cancellationToken);
         }
         else
         {
-            await channel.BasicAckAsync(
+            await channelConnection.channel.BasicAckAsync(
                 deliveryTag: deliveryTag,
                 multiple: false,
                 cancellationToken: cancellationToken);

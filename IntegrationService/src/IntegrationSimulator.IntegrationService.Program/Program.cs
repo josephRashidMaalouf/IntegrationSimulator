@@ -5,6 +5,7 @@ using IntegrationSimulator.IntegrationService.Infrastructure.MessageQueueing;
 using IntegrationSimulator.IntegrationService.Infrastructure.Persistence;
 using IntegrationSimulator.IntegrationService.Infrastructure.Persistence.Repositories;
 using IntegrationSimulator.IntegrationService.Infrastructure.PollyHandlers;
+using IntegrationSimulator.IntegrationService.Program.ConfigurationModels;
 using IntegrationSimulator.IntegrationService.Program.HostedServices;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,19 +35,26 @@ builder.Services.AddSerilog(config =>
         .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day);
 });
 
-
 builder.Services.AddScoped<IMetaDataRepository, MetaDataRepository>();
 builder.Services.AddScoped<IPollingCoordinator, PollingCoordinator>();
 builder.Services.AddScoped<IProducer, Producer>();
 builder.Services.AddScoped<Consumer>();
 
-builder.Services.AddSingleton<IConnectionFactory, ConnectionFactory>(_ => new()
+
+
+builder.Services.AddSingleton<IRabbitMQConfiguration, RabbitMQConfiguration>();
+builder.Services.AddSingleton<IConnectionFactory, ConnectionFactory>(x =>
 {
-    Uri = new Uri(builder.Configuration["RabbitMQ:Uri"] ?? "amqp://guest:guest@rabbitmq:5672"),
-    ClientProvidedName = builder.Configuration["RabbitMQ:ClientProvidedName"] ?? string.Empty,
-    HostName = builder.Configuration["RabbitMQ:HostName"] ?? string.Empty,
-    UserName = builder.Configuration["RabbitMQ:Username"] ?? string.Empty,
-    Password = builder.Configuration["RabbitMQ:Password"] ?? string.Empty
+    var config = x.GetRequiredService<IRabbitMQConfiguration>();
+
+    return new ConnectionFactory
+    {
+        HostName = config.HostName,
+        ClientProvidedName = config.ClientProvidedName,
+        UserName = config.Username,
+        Password = config.Password,
+        Uri = new Uri(config.Uri),
+    };
 });
 
 builder.Services.AddHostedService<PollingService>();
