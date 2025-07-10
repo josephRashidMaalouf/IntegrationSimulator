@@ -18,21 +18,20 @@ public class RabbitMQConfiguration : IRabbitMQConfiguration
     {
         var env = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "local";
 
-        //TODO: Implement an exception to throw if these configs are not set. The app should not be able to continue without them.
         var rabbitMQConfig = config.GetSection("RabbitMQ");
 
-        HostName = rabbitMQConfig["HostNameLocal"] ?? "";
-        QueueName = rabbitMQConfig["QueueName"] ?? "";
-        ExchangeName = rabbitMQConfig["ExchangeName"] ?? "";
-        ClientProvidedName = rabbitMQConfig["ClientProvidedName"] ?? "";
-        RoutingKey = rabbitMQConfig["RoutingKey"] ?? "";
-        Username = rabbitMQConfig["Username"] ?? "";
-        Password = rabbitMQConfig["Password"] ?? "";
-        Uri = rabbitMQConfig["UriLocal"] ?? "";
+        HostName = rabbitMQConfig["HostNameLocal"] ?? throw new InvalidOperationException("RabbitMQ HostNameLocal is not configured");
+        QueueName = rabbitMQConfig["QueueName"] ?? throw new InvalidOperationException("RabbitMQ QueueName is not configured"); 
+        ExchangeName = rabbitMQConfig["ExchangeName"] ?? throw new InvalidOperationException("RabbitMQ ExchangeName is not configured"); 
+        ClientProvidedName = rabbitMQConfig["ClientProvidedName"] ?? throw new InvalidOperationException("RabbitMQ ClientProvidedName is not configured"); 
+        RoutingKey = rabbitMQConfig["RoutingKey"] ?? throw new InvalidOperationException("RabbitMQ RoutingKey is not configured"); 
+        Username = rabbitMQConfig["Username"] ?? throw new InvalidOperationException("RabbitMQ Username is not configured"); 
+        Password = rabbitMQConfig["Password"] ?? throw new InvalidOperationException("RabbitMQ Password is not configured"); 
+        Uri = rabbitMQConfig["UriLocal"] ?? throw new InvalidOperationException("RabbitMQ UriLocal is not configured"); 
         if (env == "docker")
         {
-            HostName = rabbitMQConfig["HostNameDocker"] ?? "";
-            Uri = rabbitMQConfig["UriDocker"] ?? "";
+            HostName = rabbitMQConfig["HostNameDocker"] ?? throw new InvalidOperationException("RabbitMQ HostNameDocker is not configured"); 
+            Uri = rabbitMQConfig["UriDocker"] ?? throw new InvalidOperationException("RabbitMQ UriDocker is not configured"); 
         }
     }
 }

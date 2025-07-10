@@ -38,9 +38,6 @@ public class FakeERPDeQueueingService : BackgroundService
         {
             if (!open)
             {
-
-                ulong deliveryTag = 0;
-
                 _connection = await _factory.CreateConnectionAsync(cancellationToken);
                 _channel = await _connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
@@ -86,8 +83,8 @@ public class FakeERPDeQueueingService : BackgroundService
         var jsonString = Encoding.UTF8.GetString(body);
         var deliveryTag = eventArgs.DeliveryTag;
 
-        //TODO: Create an exception for this case
-        var ads = JsonSerializer.Deserialize<QueueAdsDto>(jsonString) ?? throw new Exception();
+        //TODO: Crashing the consumer with an exception is probably a bad idea. Find a better way
+        var ads = JsonSerializer.Deserialize<QueueAdsDto>(jsonString) ?? throw new JsonException($"Failed to deserialize json: {jsonString} to: {nameof(QueueAdsDto)}");
 
         _logger.LogInformation("Trace: {id}. Received {number} ads from queue. Processing...", ads.Trace, ads.AdsData.NumberOfAds);
 
