@@ -9,6 +9,7 @@ using RabbitMQ.Client.Events;
 using System.Threading;
 using IntegrationSimulator.IntegrationService.Domain.Models;
 using IntegrationSimulator.IntegrationService.Domain.Models.Results;
+using System.Threading.Channels;
 
 namespace IntegrationSimulator.IntegrationService.Program.HostedServices;
 
@@ -62,54 +63,66 @@ public class FakeERPDeQueueingService : BackgroundService
                     cancellationToken: cancellationToken);
 
                 var consumer = new AsyncEventingBasicConsumer(channel);
-                consumer.ReceivedAsync += async (model, eventArgs) =>
-                {
-                    var body = eventArgs.Body.ToArray();
-                    var jsonString = Encoding.UTF8.GetString(body);
-                    deliveryTag = eventArgs.DeliveryTag;
 
-                    //TODO: Create an exception for this case
-                    var ads = JsonSerializer.Deserialize<QueueAdsDto>(jsonString) ?? throw new Exception();
-
-                    _logger.LogInformation("Trace: {id}. Received {number} ads from queue. Processing...", ads.Trace, ads.AdsData.NumberOfAds);
-
-                    if (ads.AdsData.NumberOfAds != 0)
-                    {
-                        var dto = ads.AdsData.Ads
-                            .Select(x => new PostNewJobToFakeERP(x.Id, x.Title, x.WorkplaceName, x.PublishedDate))
-                            .ToList();
-                        var resultErp = await _erpClient.PostNewJobListingsAsync(dto, ads.Trace);
-
-                        if (resultErp is ErrorResult<List<PostNewJobToFakeERP>> erpErrorResult)
-                        {
-                            foreach (var er in erpErrorResult.Errors)
-                            {
-                                _logger.LogWarning("Trace: {id}. Could not send ads to fake ERP: {reason}", er.Trace, er.Message);
-                            }
-
-                            await channel.BasicRejectAsync(
-                                deliveryTag: deliveryTag,
-                                requeue: false,
-                                cancellationToken: cancellationToken);
-
-                            return;
-                        }
-
-                    }
+                consumer.ReceivedAsync += OnReceivedAsync;
 
 
-                    await channel.BasicAckAsync(
-                        deliveryTag: deliveryTag,
-                        multiple: false,
-                        cancellationToken: cancellationToken);
-
-
-                    _logger.LogInformation("Trace: {id}. AdsData sent to fakeERP: {numOfAds}", ads.Trace, ads.AdsData.NumberOfAds);
-                };
+                await channel.BasicConsumeAsync(
+                    queue: nameof(FakeERPDeQueueingService),
+                    autoAck: false,
+                    consumer: consumer);
 
                 open = true;
             }
         }
 
+    }
+
+    private async Task OnReceivedAsync(object obj, BasicDeliverEventArgs eventArgs)
+    {
+        var body = eventArgs.Body.ToArray();
+        var jsonString = Encoding.UTF8.GetString(body);
+        var deliveryTag = eventArgs.DeliveryTag;
+
+        //TODO: Create an exception for this case
+        var ads = JsonSerializer.Deserialize<QueueAdsDto>(jsonString) ?? throw new Exception();
+
+        _logger.LogInformation("Trace: {id}. Received {number} ads from queue. Processing...", ads.Trace, ads.AdsData.NumberOfAds);
+
+        if (ads.AdsData.NumberOfAds != 0)
+        {
+            var dto = ads.AdsData.Ads
+                .Select(x => new PostNewJobToFakeERP(x.Id, x.Title, x.WorkplaceName, x.PublishedDate))
+                .ToList();
+            var resultErp = await _erpClient.PostNewJobListingsAsync(dto, ads.Trace);
+
+            if (resultErp is ErrorResult<List<PostNewJobToFakeERP>> erpErrorResult)
+            {
+                foreach (var er in erpErrorResult.Errors)
+                {
+                    _logger.LogWarning("Trace: {id}. Could not send ads to fake ERP: {reason}", er.Trace, er.Message);
+                }
+
+                return;
+            }
+        }
+
+        _logger.LogInformation("Trace: {id}. AdsData sent to fakeERP: {numOfAds}", ads.Trace, ads.AdsData.NumberOfAds);
+
+        //await ((AsyncEventingBasicConsumer)obj).Channel.BasicAckAsync(
+        //    deliveryTag: deliveryTag,
+        //    multiple: false);
+    }
+
+    public override Task StopAsync(CancellationToken cancellationToken)
+    {
+        Console.WriteLine("Stopping FakeERPQueueingService with stopAsync");
+        return base.StopAsync(cancellationToken);
+    }
+
+    public override void Dispose()
+    {
+        Console.WriteLine("Disposing....");
+        base.Dispose();
     }
 }

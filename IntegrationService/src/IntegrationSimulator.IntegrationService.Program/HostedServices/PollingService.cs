@@ -19,7 +19,14 @@ public class PollingService : BackgroundService
             var trace = Guid.NewGuid();
             await _coordinator.Execute(trace);
 
-            await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
+            try
+            {
+                await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
+            }
+            catch (TaskCanceledException)
+            {
+                break;
+            }
 
         }
     }
