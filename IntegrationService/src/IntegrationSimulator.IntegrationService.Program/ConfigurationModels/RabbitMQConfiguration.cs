@@ -16,23 +16,23 @@ public class RabbitMQConfiguration : IRabbitMQConfiguration
 
     public RabbitMQConfiguration(IConfiguration config)
     {
-        //TODO: Implement an exception to throw if these configs are not set. The app should not be able to continue without them.
-        var env = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "";
+        var env = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "local";
 
+        //TODO: Implement an exception to throw if these configs are not set. The app should not be able to continue without them.
         var rabbitMQConfig = config.GetSection("RabbitMQ");
 
         HostName = rabbitMQConfig["HostNameLocal"] ?? "";
-        if (env == "docker")
-        {
-            HostName = rabbitMQConfig["HostNameDocker"] ?? "";
-        }
-
         QueueName = rabbitMQConfig["QueueName"] ?? "";
         ExchangeName = rabbitMQConfig["ExchangeName"] ?? "";
         ClientProvidedName = rabbitMQConfig["ClientProvidedName"] ?? "";
         RoutingKey = rabbitMQConfig["RoutingKey"] ?? "";
         Username = rabbitMQConfig["Username"] ?? "";
         Password = rabbitMQConfig["Password"] ?? "";
-        Uri = rabbitMQConfig["Uri"] ?? "";
+        Uri = rabbitMQConfig["UriLocal"] ?? "";
+        if (env == "docker")
+        {
+            HostName = rabbitMQConfig["HostNameDocker"] ?? "";
+            Uri = rabbitMQConfig["UriDocker"] ?? "";
+        }
     }
 }

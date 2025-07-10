@@ -38,8 +38,6 @@ builder.Services.AddSerilog(config =>
 builder.Services.AddScoped<IMetaDataRepository, MetaDataRepository>();
 builder.Services.AddScoped<IPollingCoordinator, PollingCoordinator>();
 builder.Services.AddScoped<IProducer, Producer>();
-builder.Services.AddScoped<Consumer>();
-
 
 
 builder.Services.AddSingleton<IRabbitMQConfiguration, RabbitMQConfiguration>();
@@ -58,7 +56,7 @@ builder.Services.AddSingleton<IConnectionFactory, ConnectionFactory>(x =>
 });
 
 builder.Services.AddHostedService<PollingService>();
-builder.Services.AddHostedService<DeQueueingService>();
+builder.Services.AddHostedService<FakeERPDeQueueingService>();
 
 var app  = builder.Build();
 

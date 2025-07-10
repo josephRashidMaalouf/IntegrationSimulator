@@ -41,17 +41,20 @@ public class PollingCoordinator : IPollingCoordinator
 
         var ads = successResult.Data;
 
+        if (ads.NumberOfAds > 0)
+        {
+            await _producer.PublishToQueueAsync(new QueueAdsDto(ads, trace));
 
-        await _producer.PublishToQueueAsync(new QueueAdsDto(ads, trace));
-        
-        _logger.LogInformation("Trace: {id}. New job ads listed: {numOfAds}. Sent to queue.", trace, ads.NumberOfAds);
+            _logger.LogInformation("Trace: {id}. New job ads listed: {numOfAds}. Sent to queue.", trace, ads.NumberOfAds);
 
-        var mostRecentAdDate = ads.Ads
-            .OrderByDescending(x => x.PublishedDate)
-            .First()
-            .PublishedDate;
+            var mostRecentAdDate = ads.Ads
+                .OrderByDescending(x => x.PublishedDate)
+                .First()
+                .PublishedDate;
 
-        await _metaDataRepository.SaveMostRecentSavedAdDateAsync(trace, mostRecentAdDate);
-
+            await _metaDataRepository.SaveMostRecentSavedAdDateAsync(trace, mostRecentAdDate);
+            return;
+        }
+        _logger.LogInformation("Trace: {id}. No new job ads were listed.", trace);
     }
 }

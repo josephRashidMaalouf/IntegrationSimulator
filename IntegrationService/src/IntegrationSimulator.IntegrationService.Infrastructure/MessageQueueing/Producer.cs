@@ -8,30 +8,40 @@ namespace IntegrationSimulator.IntegrationService.Infrastructure.MessageQueueing
 
 public class Producer : IProducer
 {
-    private readonly RabbitMQService _mqService;
     private readonly IRabbitMQConfiguration _config;
-     
+    private readonly IConnectionFactory _factory;
 
-    public Producer(RabbitMQService mqService)
+    public Producer(IConnectionFactory factory, IRabbitMQConfiguration config)
     {
-        _mqService = mqService;
+        _factory = factory;
+        _config = config;
     }
 
     public async Task PublishToQueueAsync(QueueAdsDto ads)
     {
-        var channelConnection = await _mqService.DeclareDurableQueueAsync();
-        
+        await using var connection = await _factory.CreateConnectionAsync();
+        await using var channel = await connection.CreateChannelAsync();
+
+        await channel.ExchangeDeclareAsync(
+            exchange: _config.ExchangeName,
+            type: ExchangeType.Fanout,
+            durable: true,
+            autoDelete: false);
+
         var jsonAds = JsonSerializer.Serialize(ads);
         var body = Encoding.UTF8.GetBytes(jsonAds);
 
-        await channelConnection.channel.BasicPublishAsync(
+        var props = new BasicProperties()
+        {
+            Persistent = true
+        };
+
+        await channel.BasicPublishAsync(
             exchange: _config.ExchangeName,
-            routingKey: _config.RoutingKey,
+            routingKey: "",
+            mandatory: true,
+            basicProperties: props,
             body: body
         );
-
-        await channelConnection.channel.CloseAsync();
-        await channelConnection.connection.CloseAsync();
-
     }
 }
