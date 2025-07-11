@@ -103,8 +103,6 @@ public class FakeERPDeQueueingService : BackgroundService
         {
             var ads = JsonSerializer.Deserialize<QueueAdsDto>(jsonString);
 
-            //throw new JsonException($"Failed to deserialize json: {jsonString} to: {nameof(QueueAdsDto)}");
-
             _logger.LogInformation("Trace: {id}. Received {number} ads from queue. Processing...", ads.Trace,
                 ads.AdsData.NumberOfAds);
 
