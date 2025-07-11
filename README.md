@@ -28,7 +28,7 @@ Projektet byggde jag för att träna på kärnkoncept inom integration, såsom p
 
 ## Arkitektur
 
-![Applikationens flödesschema](image.png)
+<img width="514" height="670" alt="image" src="https://github.com/user-attachments/assets/85ad542d-8925-4b2a-a633-6a8894467366" />
 
 - **IntegrationService:** .NET 9-konsolapp med två huvudsakliga bakgrundstjänster:
   - **PollingService:** Hämtar nya platsannonser och lägger dem i kön.
