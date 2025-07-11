@@ -2,7 +2,6 @@
 using Polly;
 using Polly.Extensions.Http;
 using Polly.Retry;
-using RabbitMQ.Client.Exceptions;
 
 namespace IntegrationSimulator.IntegrationService.Infrastructure.PollyHandlers;
 

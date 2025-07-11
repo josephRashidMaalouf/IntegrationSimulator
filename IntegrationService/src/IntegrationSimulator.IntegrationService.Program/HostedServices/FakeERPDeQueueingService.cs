@@ -1,20 +1,13 @@
 ﻿using System.Text;
 using System.Text.Json;
 using IntegrationSimulator.IntegrationService.Domain.Interfaces;
-using IntegrationSimulator.IntegrationService.Infrastructure.MessageQueueing;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using System.Threading;
 using IntegrationSimulator.IntegrationService.Domain.Models;
 using IntegrationSimulator.IntegrationService.Domain.Models.Results;
-using System.Threading.Channels;
 using RabbitMQ.Client.Exceptions;
-using System.Net.Sockets;
-using IntegrationSimulator.IntegrationService.Infrastructure.PollyHandlers;
-using Polly;
-using Polly.Retry;
 using RetryPolicy = IntegrationSimulator.IntegrationService.Infrastructure.PollyHandlers.RetryPolicy;
 
 namespace IntegrationSimulator.IntegrationService.Program.HostedServices;
