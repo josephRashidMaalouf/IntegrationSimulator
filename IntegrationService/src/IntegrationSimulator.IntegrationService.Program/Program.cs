@@ -17,12 +17,12 @@ var builder = Host.CreateApplicationBuilder(args);
 
 builder.Services.AddHttpClient<IJobAdClient, PlatsbankenClient>()
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-    .AddPolicyHandler(RetryPolicy.Get());
+    .AddPolicyHandler(RetryPolicy.HttpPolicy());
 
 
 builder.Services.AddHttpClient<IFakeERPClient, FakeERPClient>()
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-    .AddPolicyHandler(RetryPolicy.Get());
+    .AddPolicyHandler(RetryPolicy.HttpPolicy());
 
 builder.Services.AddDbContext<JobAdsMetaDataContext>();
 

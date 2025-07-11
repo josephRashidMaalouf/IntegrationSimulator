@@ -12,6 +12,10 @@ using IntegrationSimulator.IntegrationService.Domain.Models.Results;
 using System.Threading.Channels;
 using RabbitMQ.Client.Exceptions;
 using System.Net.Sockets;
+using IntegrationSimulator.IntegrationService.Infrastructure.PollyHandlers;
+using Polly;
+using Polly.Retry;
+using RetryPolicy = IntegrationSimulator.IntegrationService.Infrastructure.PollyHandlers.RetryPolicy;
 
 namespace IntegrationSimulator.IntegrationService.Program.HostedServices;
 
@@ -34,21 +38,16 @@ public class FakeERPDeQueueingService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        bool open = false;
-
-        while (!cancellationToken.IsCancellationRequested)
+        await RetryPolicy
+            .QueueBindingPolicy<FakeERPDeQueueingService>(_logger)
+            .ExecuteAsync(async () =>
         {
-            if (!open)
-            {
-                //TODO: Find a better way to handle this. Maybe exponential back of with polly?
-                open = await OpenQueueAsync(cancellationToken);
-                await Task.Delay(5000, cancellationToken);
-            }
-        }
+            await OpenQueueAsync(cancellationToken);
+        });
 
     }
 
-    private async Task<bool> OpenQueueAsync(CancellationToken cancellationToken)
+    private async Task OpenQueueAsync(CancellationToken cancellationToken)
     {
         try
         {
@@ -89,10 +88,9 @@ public class FakeERPDeQueueingService : BackgroundService
         catch (BrokerUnreachableException ex)
         {
             _logger.LogWarning("Unable to reach RabbitMQ on: {endpoint}", _config.Uri);
-            return false;
+            throw;
         }
 
-        return true;
     }
 
     private async Task OnReceivedAsync(object obj, BasicDeliverEventArgs eventArgs)
