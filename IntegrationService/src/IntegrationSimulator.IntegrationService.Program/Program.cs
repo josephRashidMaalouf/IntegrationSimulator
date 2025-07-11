@@ -65,6 +65,7 @@ await ApplyMigrations();
 //Make sure the database have been set up before continuing
 Thread.Sleep(10000);
 
+
 await app.RunAsync();
 
 

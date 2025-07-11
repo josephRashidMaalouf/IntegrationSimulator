@@ -10,6 +10,8 @@ using System.Threading;
 using IntegrationSimulator.IntegrationService.Domain.Models;
 using IntegrationSimulator.IntegrationService.Domain.Models.Results;
 using System.Threading.Channels;
+using RabbitMQ.Client.Exceptions;
+using System.Net.Sockets;
 
 namespace IntegrationSimulator.IntegrationService.Program.HostedServices;
 
@@ -38,43 +40,59 @@ public class FakeERPDeQueueingService : BackgroundService
         {
             if (!open)
             {
-                _connection = await _factory.CreateConnectionAsync(cancellationToken);
-                _channel = await _connection.CreateChannelAsync(cancellationToken: cancellationToken);
-
-                await _channel.QueueDeclareAsync(
-                    queue: nameof(FakeERPDeQueueingService),
-                    durable: true,
-                    exclusive: false,
-                    autoDelete: false,
-                    cancellationToken: cancellationToken);
-
-                await _channel.ExchangeDeclareAsync(
-                    exchange: _config.ExchangeName,
-                    type: ExchangeType.Fanout,
-                    durable: true,
-                    autoDelete: false,
-                    cancellationToken: cancellationToken);
-
-                await _channel.QueueBindAsync(
-                    queue: nameof(FakeERPDeQueueingService),
-                    exchange: _config.ExchangeName,
-                    routingKey: "",
-                    cancellationToken: cancellationToken);
-
-                var consumer = new AsyncEventingBasicConsumer(_channel);
-
-                consumer.ReceivedAsync += OnReceivedAsync;
-
-
-                await _channel.BasicConsumeAsync(
-                    queue: nameof(FakeERPDeQueueingService),
-                    autoAck: false,
-                    consumer: consumer);
-
-                open = true;
+                //TODO: Find a better way to handle this. Maybe exponential back of with polly?
+                open = await OpenQueueAsync(cancellationToken);
+                await Task.Delay(5000, cancellationToken);
             }
         }
 
+    }
+
+    private async Task<bool> OpenQueueAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            _connection = await _factory.CreateConnectionAsync(cancellationToken);
+            _channel = await _connection.CreateChannelAsync(cancellationToken: cancellationToken);
+
+            await _channel.QueueDeclareAsync(
+                queue: nameof(FakeERPDeQueueingService),
+                durable: true,
+                exclusive: false,
+                autoDelete: false,
+                cancellationToken: cancellationToken);
+
+            await _channel.ExchangeDeclareAsync(
+                exchange: _config.ExchangeName,
+                type: ExchangeType.Fanout,
+                durable: true,
+                autoDelete: false,
+                cancellationToken: cancellationToken);
+
+            await _channel.QueueBindAsync(
+                queue: nameof(FakeERPDeQueueingService),
+                exchange: _config.ExchangeName,
+                routingKey: "",
+                cancellationToken: cancellationToken);
+
+            var consumer = new AsyncEventingBasicConsumer(_channel);
+
+            consumer.ReceivedAsync += OnReceivedAsync;
+
+
+            await _channel.BasicConsumeAsync(
+                queue: nameof(FakeERPDeQueueingService),
+                autoAck: false,
+                consumer: consumer,
+                cancellationToken: cancellationToken);
+        }
+        catch (BrokerUnreachableException ex)
+        {
+            _logger.LogWarning("Unable to reach RabbitMQ on: {endpoint}", _config.Uri);
+            return false;
+        }
+
+        return true;
     }
 
     private async Task OnReceivedAsync(object obj, BasicDeliverEventArgs eventArgs)
@@ -83,34 +101,50 @@ public class FakeERPDeQueueingService : BackgroundService
         var jsonString = Encoding.UTF8.GetString(body);
         var deliveryTag = eventArgs.DeliveryTag;
 
-        //TODO: Crashing the consumer with an exception is probably a bad idea. Find a better way
-        var ads = JsonSerializer.Deserialize<QueueAdsDto>(jsonString) ?? throw new JsonException($"Failed to deserialize json: {jsonString} to: {nameof(QueueAdsDto)}");
-
-        _logger.LogInformation("Trace: {id}. Received {number} ads from queue. Processing...", ads.Trace, ads.AdsData.NumberOfAds);
-
-        if (ads.AdsData.NumberOfAds != 0)
+        try
         {
-            var dto = ads.AdsData.Ads
-                .Select(x => new PostNewJobToFakeERP(x.Id, x.Title, x.WorkplaceName, x.PublishedDate))
-                .ToList();
-            var resultErp = await _erpClient.PostNewJobListingsAsync(dto, ads.Trace);
+            var ads = JsonSerializer.Deserialize<QueueAdsDto>(jsonString);
 
-            if (resultErp is ErrorResult<List<PostNewJobToFakeERP>> erpErrorResult)
+            //throw new JsonException($"Failed to deserialize json: {jsonString} to: {nameof(QueueAdsDto)}");
+
+            _logger.LogInformation("Trace: {id}. Received {number} ads from queue. Processing...", ads.Trace,
+                ads.AdsData.NumberOfAds);
+
+            if (ads.AdsData.NumberOfAds != 0)
             {
-                foreach (var er in erpErrorResult.Errors)
+                var dto = ads.AdsData.Ads
+                    .Select(x => new PostNewJobToFakeERP(x.Id, x.Title, x.WorkplaceName, x.PublishedDate))
+                    .ToList();
+                var resultErp = await _erpClient.PostNewJobListingsAsync(dto, ads.Trace);
+
+                if (resultErp is ErrorResult<List<PostNewJobToFakeERP>> erpErrorResult)
                 {
-                    _logger.LogWarning("Trace: {id}. Could not send ads to fake ERP: {reason}", er.Trace, er.Message);
+                    foreach (var er in erpErrorResult.Errors)
+                    {
+                        _logger.LogWarning("Trace: {id}. Could not send ads to fake ERP: {reason}", er.Trace,
+                            er.Message);
+                    }
+
+                    return;
                 }
-
-                return;
             }
+
+            _logger.LogInformation("Trace: {id}. AdsData sent to fakeERP: {numOfAds}", ads.Trace,
+                ads.AdsData.NumberOfAds);
+
+            await ((AsyncEventingBasicConsumer)obj).Channel.BasicAckAsync(
+                deliveryTag: deliveryTag,
+                multiple: false);
         }
-
-        _logger.LogInformation("Trace: {id}. AdsData sent to fakeERP: {numOfAds}", ads.Trace, ads.AdsData.NumberOfAds);
-
-        await ((AsyncEventingBasicConsumer)obj).Channel.BasicAckAsync(
-            deliveryTag: deliveryTag,
-            multiple: false);
+        catch (JsonException ex)
+        {
+            _logger.LogError("Failed to deserialize json: {jsonString} to: {dto}.\nError message: {msg}", jsonString,
+                nameof(QueueAdsDto), ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message);
+        }
     }
 
     public override async Task StopAsync(CancellationToken cancellationToken)

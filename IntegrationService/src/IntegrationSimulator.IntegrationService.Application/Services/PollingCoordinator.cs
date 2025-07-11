@@ -21,7 +21,7 @@ public class PollingCoordinator : IPollingCoordinator
         _producer = producer;
     }
 
-    public async Task Execute(Guid trace)
+    public async Task ExecuteAsync(Guid trace)
     {
         DateTime latestSuccessfullFetch = await _metaDataRepository.GetLatestSuccessfulFetchDate();
 
@@ -33,7 +33,7 @@ public class PollingCoordinator : IPollingCoordinator
 
             foreach (var error in errorResult.Errors)
             {
-                _logger.LogWarning("Trace: {trace}. " + error.Message, error.Trace);
+                _logger.LogWarning("TraceId: {trace}" + error.Message, error.Trace);
 
             }
             return;
@@ -45,7 +45,7 @@ public class PollingCoordinator : IPollingCoordinator
         {
             await _producer.PublishToQueueAsync(new QueueAdsDto(ads, trace));
 
-            _logger.LogInformation("Trace: {id}. New job ads listed: {numOfAds}. Sent to queue.", trace, ads.NumberOfAds);
+            _logger.LogInformation("TraceId: {traceId}. New job ads listed: {numOfAds}. Sent to queue.",trace, ads.NumberOfAds);
 
             var mostRecentAdDate = ads.Ads
                 .OrderByDescending(x => x.PublishedDate)
@@ -55,6 +55,6 @@ public class PollingCoordinator : IPollingCoordinator
             await _metaDataRepository.SaveMostRecentSavedAdDateAsync(trace, mostRecentAdDate);
             return;
         }
-        _logger.LogInformation("Trace: {id}. No new job ads were listed.", trace);
+        _logger.LogInformation("TraceId: {trace}. No new job ads were listed.", trace);
     }
 }
