@@ -6,22 +6,20 @@ using Microsoft.Extensions.Logging;
 namespace IntegrationSimulator.IntegrationService.Application.Services;
 public class PollingCoordinator : IPollingCoordinator
 {
-    private readonly IFakeERPClient _erpClient;
     private readonly IJobAdClient _jobAdClient;
     private readonly IMetaDataRepository _metaDataRepository;
     private readonly ILogger<PollingCoordinator> _logger;
     private readonly IProducer _producer;
 
-    public PollingCoordinator(IFakeERPClient erpClient, IJobAdClient jobAdClient, ILogger<PollingCoordinator> logger, IMetaDataRepository metaDataRepository, IProducer producer)
+    public PollingCoordinator(IJobAdClient jobAdClient, ILogger<PollingCoordinator> logger, IMetaDataRepository metaDataRepository, IProducer producer)
     {
-        _erpClient = erpClient;
         _jobAdClient = jobAdClient;
         _logger = logger;
         _metaDataRepository = metaDataRepository;
         _producer = producer;
     }
 
-    public async Task Execute(Guid trace)
+    public async Task ExecuteAsync(Guid trace)
     {
         DateTime latestSuccessfullFetch = await _metaDataRepository.GetLatestSuccessfulFetchDate();
 
@@ -33,7 +31,7 @@ public class PollingCoordinator : IPollingCoordinator
 
             foreach (var error in errorResult.Errors)
             {
-                _logger.LogWarning("Trace: {trace}. " + error.Message, error.Trace);
+                _logger.LogWarning("TraceId: {trace}" + error.Message, error.Trace);
 
             }
             return;
@@ -45,7 +43,7 @@ public class PollingCoordinator : IPollingCoordinator
         {
             await _producer.PublishToQueueAsync(new QueueAdsDto(ads, trace));
 
-            _logger.LogInformation("Trace: {id}. New job ads listed: {numOfAds}. Sent to queue.", trace, ads.NumberOfAds);
+            _logger.LogInformation("TraceId: {traceId}. New job ads listed: {numOfAds}. Sent to queue.",trace, ads.NumberOfAds);
 
             var mostRecentAdDate = ads.Ads
                 .OrderByDescending(x => x.PublishedDate)
@@ -55,6 +53,6 @@ public class PollingCoordinator : IPollingCoordinator
             await _metaDataRepository.SaveMostRecentSavedAdDateAsync(trace, mostRecentAdDate);
             return;
         }
-        _logger.LogInformation("Trace: {id}. No new job ads were listed.", trace);
+        _logger.LogInformation("TraceId: {trace}. No new job ads were listed.", trace);
     }
 }

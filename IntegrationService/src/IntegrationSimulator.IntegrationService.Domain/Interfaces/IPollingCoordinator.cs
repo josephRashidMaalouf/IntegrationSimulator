@@ -4,5 +4,5 @@ namespace IntegrationSimulator.IntegrationService.Domain.Interfaces;
 
 public interface IPollingCoordinator
 {
-    Task Execute(Guid trace);
+    Task ExecuteAsync(Guid trace);
 }
