@@ -17,7 +17,6 @@ public class PlatsbankenClient : IJobAdClient
         var endpoints = config.GetSection("Endpoints");
         var uri = endpoints["Platsbanken"] ?? "";
         _httpClient.BaseAddress = new Uri(uri);
-        _httpClient.BaseAddress = new Uri(uri);
     }
 
     public async Task<Result> GetNewAdListingsAsync(DateTime latestFetchedAdsDate, Guid trace)

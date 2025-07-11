@@ -6,15 +6,13 @@ using Microsoft.Extensions.Logging;
 namespace IntegrationSimulator.IntegrationService.Application.Services;
 public class PollingCoordinator : IPollingCoordinator
 {
-    private readonly IFakeERPClient _erpClient;
     private readonly IJobAdClient _jobAdClient;
     private readonly IMetaDataRepository _metaDataRepository;
     private readonly ILogger<PollingCoordinator> _logger;
     private readonly IProducer _producer;
 
-    public PollingCoordinator(IFakeERPClient erpClient, IJobAdClient jobAdClient, ILogger<PollingCoordinator> logger, IMetaDataRepository metaDataRepository, IProducer producer)
+    public PollingCoordinator(IJobAdClient jobAdClient, ILogger<PollingCoordinator> logger, IMetaDataRepository metaDataRepository, IProducer producer)
     {
-        _erpClient = erpClient;
         _jobAdClient = jobAdClient;
         _logger = logger;
         _metaDataRepository = metaDataRepository;
